@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arepas Training Ground</title>
+<link rel="stylesheet" href="styles.css?v=14">
+</head>
+<body>
+<header id="toolbar">
+  <div class="group">
+    <strong class="brand">Arepas Training Ground</strong>
+    <select id="trainerSel" title="Choose a trainer">
+      <option value="maiden">Maiden freeze</option>
+      <option value="click">Click trainer</option>
+      <option value="nylo">Nylocas demi-boss</option>
+    </select>
+    <button id="start" class="primary" title="Start / restart (Enter)">Start</button>
+    <button id="stop" title="Stop (Esc)">Stop</button>
+  </div>
+  <div class="group" data-for="click">
+    <label for="clickModeSel">Mode</label>
+    <select id="clickModeSel" data-set="clickMode">
+      <option value="classic">Classic</option>
+      <option value="swap">Swap</option>
+      <option value="cast">Cast</option>
+      <option value="mixed">Mixed</option>
+    </select>
+    <label for="clickDurSel">Timer</label>
+    <select id="clickDurSel" data-set="clickDuration" data-num>
+      <option value="15">15s</option>
+      <option value="30">30s</option>
+      <option value="60">60s</option>
+      <option value="120">2 min</option>
+      <option value="300">5 min</option>
+      <option value="0">Free play</option>
+    </select>
+  </div>
+  <div class="group">
+    <label for="setupSel">Setup</label>
+    <select id="setupSel" title="Load a saved setup"></select>
+    <span id="dirtyMark" class="dirty" hidden>unsaved</span>
+    <button id="saveBtn" title="Save changes to this setup">Save</button>
+    <button id="saveAsBtn" title="Save the current layout as a new setup">Save as…</button>
+  </div>
+  <div class="group">
+    <button id="placeBtn" title="Drag the four boxes onto the crab spawns (P)">Place boxes</button>
+    <button id="shotBtn" title="Load a screenshot of your client as the background">Screenshot…</button>
+    <button id="shotClear" title="Remove the background screenshot">✕</button>
+    <input id="shotFile" type="file" accept="image/*" hidden>
+  </div>
+  <div class="group">
+    <label>Client
+      <input id="cw" type="number" min="400" max="4000"> ×
+      <input id="ch" type="number" min="300" max="3000">
+    </label>
+    <select id="preset" title="Size presets">
+      <option value="">Presets…</option>
+      <option value="765x503">765 × 503</option>
+      <option value="1024x768">1024 × 768</option>
+      <option value="1280x720">1280 × 720</option>
+      <option value="1366x768">1366 × 768</option>
+      <option value="1440x900">1440 × 900</option>
+      <option value="1600x900">1600 × 900</option>
+      <option value="1920x1080">1920 × 1080</option>
+      <option value="fill">Fill window</option>
+    </select>
+  </div>
+  <div class="group right">
+    <button id="hideBtn" title="Hide the toolbar and panel (H)">Hide controls</button>
+    <button id="fullscreen">Fullscreen</button>
+    <button id="drawerBtn" title="Toggle side drawer (`)">Panel ⟩</button>
+  </div>
+</header>
+
+<main id="stage">
+  <div id="client">
+    <div id="titlebar"><span class="dots"><i></i><i></i><i></i></span><span id="titletext">Game client</span><span class="hint">drag to move</span></div>
+    <canvas id="game"></canvas>
+    <div class="rh rh-e" data-dir="e"></div>
+    <div class="rh rh-s" data-dir="s"></div>
+    <div class="rh rh-se" data-dir="se"></div>
+    <div id="sizeBadge"></div>
+  </div>
+</main>
+<div id="toast" role="status" hidden></div>
+<div id="bar" role="dialog" hidden></div>
+
+<aside id="drawer">
+  <nav class="dtabs">
+    <button data-pane="session" class="on">Session</button>
+    <button data-pane="setups">Setups</button>
+    <button data-pane="settings">Settings</button>
+    <button data-pane="help">Help</button>
+  </nav>
+  <section id="pane-session" class="pane on"><div id="sessionStats"></div></section>
+
+  <section id="pane-setups" class="pane">
+    <h4>Saved setups</h4>
+    <p class="note">A setup saves the client size, where the game frame sits on screen, the four boxes and the screenshot. It only changes when you press <b>Save</b>.</p>
+    <ul id="setupList" class="setups"></ul>
+  </section>
+
+  <section id="pane-settings" class="pane">
+    <h4>General</h4>
+    <label>Countdown before a run (s) <input id="countdownIn" data-set="countdownSec" data-num type="number" min="0" max="10" step="0.5"></label>
+
+    <div data-for="click">
+      <h4>Targets</h4>
+      <label>Box size (px) <input id="clickTargetIn" data-set="clickTarget" data-num type="number" min="12" max="120"></label>
+      <label>Next box appears <select id="clickDelaySel" data-set="clickDelayMode"><option value="instant">Instantly</option><option value="fixed">After a fixed wait</option><option value="random">After a random wait</option></select></label>
+      <label>Fixed wait (ms) <input id="clickDelayIn" data-set="clickDelayMs" data-num type="number" min="0" max="5000" step="50"></label>
+      <label>Random wait from (ms) <input id="clickDelayMinIn" data-set="clickDelayMin" data-num type="number" min="0" max="5000" step="50"></label>
+      <label>Random wait to (ms) <input id="clickDelayMaxIn" data-set="clickDelayMax" data-num type="number" min="0" max="5000" step="50"></label>
+      <label>Items per gear swap <input id="clickSwapIn" data-set="clickSwapCount" data-num type="number" min="1" max="10"></label>
+      <label>Bonus window (ms) <input id="clickTickIn" data-set="clickTickMs" data-num type="number" min="100" max="2000" step="50"></label>
+      <label class="chk"><input id="clickSpeedChk" data-set="clickShowSpeed" type="checkbox"> Show click speed on each hit</label>
+    </div>
+
+    <div data-for="nylo">
+      <h4>Nylocas boss</h4>
+      <label>Boss changes colour every (s) <input id="nyloPhaseIn" data-set="nyloPhaseSec" data-num type="number" min="2" max="60" step="0.5"></label>
+      <label>Melee weapon attacks every (s) <input id="nyloMeleeIn" data-set="nyloSpeedMelee" data-num type="number" min="0.6" max="10" step="0.6"></label>
+      <label>Ranged weapon attacks every (s) <input id="nyloRangedIn" data-set="nyloSpeedRanged" data-num type="number" min="0.6" max="10" step="0.6"></label>
+      <label>Magic weapon attacks every (s) <input id="nyloMagicIn" data-set="nyloSpeedMagic" data-num type="number" min="0.6" max="10" step="0.6"></label>
+      <button id="nyloReset">Reset the boss box position</button>
+    </div>
+
+    <div data-for="click nylo">
+      <h4>Inventory</h4>
+      <p class="note" data-for="click">The Click trainer shows the inventory in Swap, Cast and Mixed modes. Classic is boxes only.</p>
+      <label>Inventory size (%) <input id="invScale" type="number" min="50" max="300" step="1"></label>
+      <p class="note">Match it to your real inventory. In <b>Edit layout</b> (P) you can also drag the inventory, resize it from its orange corner, and click slots to set their gear: empty → white melee → blue magic → green ranged.</p>
+      <div class="row">
+        <button id="invCorner">Move it back to the corner</button>
+        <button id="invDefault">Default gear</button>
+        <button id="invClear">Empty it</button>
+      </div>
+      <div class="keybinds">
+        <label>Inventory tab key <input id="keyInv" data-key="inventory" readonly></label>
+        <label>Equipment tab key <input id="keyEqp" data-key="equipment" readonly></label>
+        <label>Prayer tab key <input id="keyPray" data-key="prayer" readonly></label>
+        <label>Magic tab key <input id="keyMag" data-key="magic" readonly></label>
+      </div>
+      <p class="note">Click a key box, then press the key you use in RuneLite. Backspace clears it.</p>
+    </div>
+
+    <div data-for="maiden">
+    <h4>Can spawn</h4>
+    <div class="spawnpick">
+      <label class="chk"><input data-spawn="S1" type="checkbox"> S1</label>
+      <label class="chk"><input data-spawn="N1" type="checkbox"> N1</label>
+      <label class="chk"><input data-spawn="S2" type="checkbox"> S2</label>
+      <label class="chk"><input data-spawn="N2" type="checkbox"> N2</label>
+    </div>
+    <p class="note">Only ticked positions appear. Tick just N1 to drill N1 on repeat. Min/max crabs are capped at the number ticked.</p>
+    <h4>Waves</h4>
+    <label>Result shown for (ms) <input data-set="resultMs" data-num type="number" min="0" max="5000" step="100"></label>
+    <label>Min crabs per wave <input data-set="minCrabs" data-num type="number" min="1" max="4"></label>
+    <label>Max crabs per wave <input data-set="maxCrabs" data-num type="number" min="1" max="4"></label>
+    <label>Time limit from spawn (ms) <input data-set="pairMs" data-num type="number" min="100" max="2000" step="50"></label>
+    <h4>Display</h4>
+    <label class="chk"><input data-set="showHints" type="checkbox"> Mark the crab to freeze (learning aid)</label>
+    <label class="chk"><input data-set="showLabels" type="checkbox"> Show S1 / S2 / N1 / N2 labels</label>
+    <label class="chk"><input data-set="showHoverText" type="checkbox"> OSRS mouse-over text (Cast Ice Rush -&gt;)</label>
+    </div>
+    <h4>Game frame</h4>
+    <label>Left edge (px from window) <input id="fx" type="number" min="0" max="8000"></label>
+    <label>Top edge (px from window) <input id="fy" type="number" min="0" max="8000"></label>
+    <p class="note">In Place mode you can also drag empty space or use the arrow keys (Shift = 10px).</p>
+    <h4>Reset</h4>
+    <button id="resetBoxes" data-for="maiden">Reset box positions</button>
+    <button id="clearStats"><span data-for="maiden nylo">Clear session stats</span><span data-for="click">Clear scores for this mode and timer</span></button>
+    <button id="resetSettings" class="danger">Reset everything</button>
+  </section>
+
+  <section id="pane-help" class="pane">
+    <div data-for="nylo">
+    <h4>Nylocas demi-boss</h4>
+    <ul>
+      <li>The boss shows a style: <b>white</b> melee, <b>blue</b> magic, <b>green</b> ranged. It starts on melee and changes to a random different style every 10 seconds.</li>
+      <li>To hit it correctly you need all the gear of its colour <b>and</b> both of its prayers:
+        melee = Protect from Melee + Piety · ranged = Protect from Missiles + Rigour · magic = Protect from Magic + Augury.</li>
+      <li>Click the boss to start attacking. You then hit it automatically with your weapon (the first box of each colour): melee and ranged every 3.0s, magic every 1.8s. Swapping gear or prayers keeps you attacking; clicking the floor stops.</li>
+      <li>Your <b>switch time</b> is from the colour change to your first correct hit. Hits in the wrong gear or prayers count as wrong-setup hits. A colour with no correct hit is a missed phase.</li>
+    </ul>
+    <h4>Setting up</h4>
+    <ul>
+      <li>Press <b>Edit layout</b> (P). Drag the boss box and the inventory where they sit on your screen, and resize both from their orange corners.</li>
+      <li>On the <b>Inv</b> tab, click slots to set your gear: empty → white → blue → green. On the <b>Pray</b> tab, drag prayers to match your in-game order.</li>
+      <li>Save it all as a setup with <b>Save as…</b>.</li>
+    </ul>
+    <h4>Keys</h4>
+    <ul>
+      <li>Tab hotkeys default to <kbd>F1</kbd> inventory, <kbd>F2</kbd> equipment, <kbd>F3</kbd> prayer, <kbd>F4</kbd> magic. Rebind them in Settings.</li>
+      <li><kbd>Enter</kbd> start · <kbd>Esc</kbd> stop · <kbd>P</kbd> edit layout · <kbd>H</kbd> hide controls · <kbd>`</kbd> panel</li>
+    </ul>
+    </div>
+    <div data-for="click">
+    <h4>Click trainer</h4>
+    <ul>
+      <li><b>Classic:</b> click the gold boxes as fast as you can (no inventory on screen).</li>
+      <li><b>Swap:</b> click the highlighted gear boxes (white melee, blue magic, green ranged). Each one equips like in game.</li>
+      <li><b>Cast:</b> open the magic tab (hotkey), click <b>Ice Barrage</b>, then click the blue box.</li>
+      <li><b>Mixed:</b> a random mix of the three.</li>
+    </ul>
+    <h4>Scoring</h4>
+    <ul>
+      <li>Every required click is <b>1 point</b>, or <b>2 points</b> if it lands within 600ms (one tick) of becoming due. A miss-click costs 1 point.</li>
+      <li>In swaps and casts, each click's clock starts when the previous one lands.</li>
+      <li>Boxes stay up until you hit them. Clicking a tab never counts as a miss.</li>
+      <li>Timed runs keep your <b>best score</b> and your <b>last 5 runs</b> for each mode and timer. Older runs are deleted.</li>
+    </ul>
+    <h4>Keys</h4>
+    <ul>
+      <li>Tab hotkeys default to <kbd>F1</kbd> inventory, <kbd>F2</kbd> equipment, <kbd>F4</kbd> magic (on a Mac you may need <kbd>fn</kbd>). Rebind them in Settings.</li>
+      <li><kbd>Enter</kbd> start · <kbd>Esc</kbd> stop · <kbd>P</kbd> edit layout (move/resize the inventory, set its gear) · <kbd>H</kbd> hide controls · <kbd>`</kbd> panel</li>
+    </ul>
+    </div>
+    <div data-for="maiden">
+    <h4>Setup</h4>
+    <ol>
+      <li>Set <b>Client</b> to your RuneLite game size (Configuration → RuneLite → Game size), or drag the frame's edges. Keep browser zoom at 100% (⌘0).</li>
+      <li>Take a screenshot of <b>just the game area</b> during a Maiden spawn, from your usual standing spot and camera angle. <b>Screenshot…</b> loads it as the background, and the client resizes to match (Retina screenshots are halved automatically).</li>
+      <li>Click <b>Place boxes</b>, then drag each box onto its crab. Drag the orange corner to resize it.</li>
+      <li>Line the frame up with where RuneLite sits on your screen: go fullscreen, press <b>H</b> to hide the controls, and in Place mode drag empty space or use the arrow keys.</li>
+      <li>Press <b>Save as…</b> to keep it as a named setup. Switch between setups from the <b>Setup</b> menu.</li>
+    </ol>
+    <p class="note">Easiest 1:1 match: take a full-screen screenshot while playing (⇧⌘3), load it, and move the frame to 0, 0.</p>
+    <h4>Rules</h4>
+    <ul>
+      <li>Each round is about <b>one crab</b>: the top priority of the ones that spawned, in the order <b>S1 → S2 → N1 → N2</b>.</li>
+      <li>Ice Rush is queued when the crabs spawn. Your first click uses it up, and it does not come back.</li>
+      <li><b>S2 on top:</b> click S2 once, <b>within 0.6s of the crabs appearing</b>. The Rush lands 0.6s after your click. Any other click inside that 0.6s overrides it and you fail.</li>
+      <li><b>S1 / N1 / N2 on top:</b> click the floor (or S2) to cancel the Rush, then click the crab. <b>Both clicks must land within 0.6s of the crabs appearing.</b> The crab gets Ice Barrage.</li>
+      <li>The round ends when a spell lands on a crab. A slow second click still ends the round, then fails it with the time shown.</li>
+    </ul>
+    <h4>Keys</h4>
+    <ul>
+      <li><kbd>Enter</kbd> start · <kbd>Esc</kbd> stop · <kbd>P</kbd> place boxes · <kbd>H</kbd> hide controls · <kbd>←↑→↓</kbd> move frame (Place mode) · <kbd>`</kbd> panel</li>
+    </ul>
+    </div>
+  </section>
+</aside>
+
+<script src="js/settings.js?v=14"></script>
+<script src="js/drill.js?v=14"></script>
+<script src="js/osrs.js?v=14"></script>
+<script src="js/maiden.js?v=14"></script>
+<script src="js/clicktrainer.js?v=14"></script>
+<script src="js/nylo.js?v=14"></script>
+<script src="js/main.js?v=14"></script>
+</body>
+</html>
